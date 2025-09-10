@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Planificador de Ensaladas</title>
+  <style>
+    :root{--bg:#f7fafc;--card:#ffffff;--muted:#6b7280;--accent:#0ea5a4}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:#0f172a}
+    .container{max-width:980px;margin:14px auto;padding:12px}
+    header{margin-bottom:12px}
+    h1{font-size:1.3rem;margin:0 0 4px 0}
+    .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
+    .grid{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center;margin-bottom:6px}
+    label{font-size:0.9rem}
+    input[type=number]{width:100%;padding:8px;border-radius:8px;border:1px solid #e6edf3}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;text-align:left;border-bottom:1px solid #eef2f7}
+    th{background:#fbfdfe;font-weight:600}
+    .muted{color:var(--muted);font-size:0.9rem}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+    button.secondary{background:#e6eef0;color:#073033}
+    @media (max-width:520px){.grid{grid-template-columns:1fr 100px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Planificador de Ensaladas</h1>
+      <div class="muted">Ingresa cuántas bandejas vas a preparar y calcula ingredientes.</div>
+    </header>
+
+    <main class="card">
+      <h3 style="margin-top:0">Ensaladas</h3>
+      <div>
+        <div class="grid"><label>Ensalada Criolla Completa</label><input id="s0" type="number" min="0" value="0"></div>
+        <div class="grid"><label>Ensalada Mediterránea con Legumbres</label><input id="s1" type="number" min="0" value="0"></div>
+        <div class="grid"><label>Ensalada Primavera Mixta</label><input id="s2" type="number" min="0" value="0"></div>
+        <div class="grid"><label>Ensalada Jamón y Queso con Vegetales</label><input id="s3" type="number" min="0" value="0"></div>
+        <div class="grid"><label>Ensalada Vegetariana de Alto Valor Nutricional</label><input id="s4" type="number" min="0" value="0"></div>
+      </div>
+
+      <div class="controls">
+        <button id="calc">Calcular</button>
+        <button class="secondary" id="reset">Reset</button>
+        <button class="secondary" id="download">Descargar CSV</button>
+      </div>
+
+      <div style="margin-top:12px">
+        <table id="tabla">
+          <thead>
+            <tr><th>Ingrediente</th><th>Cantidad total</th><th>Equivalente (kg o uds)</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="muted" style="margin-top:8px">Los huevos se muestran en <strong>unidades</strong>. Las demás cantidades están en <strong>gramos</strong> y su equivalente en kilos cuando corresponde.</div>
+    </main>
+  </div>
+
+  <script>
+    const recetas = [
+      { "Arroz":120, "Repollo":80, "Chauchas":80, "Tomate":80, "Huevo":1, "Zanahoria":80 },
+      { "Lentejas":120, "Porotos":80, "Tomate":80, "Espinaca":80, "Queso":40, "Repollo":100 },
+      { "Ensalada Jardinera":200, "Choclo":100, "Zanahoria":100, "Huevo":1, "Chauchas":100 },
+      { "Jamón":50, "Queso":40, "Arroz":100, "Tomate":80, "Repollo":80, "Zanahoria":80, "Chauchas":70 },
+      { "Lentejas":100, "Porotos":100, "Espinaca":100, "Repollo":80, "Choclo":80, "Zanahoria":40 }
+    ];
+
+    const ingredientesList = ["Arroz","Jamón","Queso","Choclo","Arvejas","Huevo","Tomate","Porotos","Lentejas","Espinaca","Repollo","Zanahoria","Ensalada Jardinera","Chauchas"];
+
+    const inputs = [];
+    for(let i=0;i<5;i++){ inputs.push(document.getElementById('s'+i)); }
+
+    function calcular(){
+      const cantidades = inputs.map(i=>Math.max(0,Math.floor(Number(i.value)||0)));
+      const totales = {};
+      ingredientesList.forEach(ing=>totales[ing]=0);
+      recetas.forEach((rec, idx)=>{
+        const n = cantidades[idx];
+        for(const [ing,cant] of Object.entries(rec)){
+          if(totales[ing]===undefined) totales[ing]=0;
+          totales[ing] += cant * n;
+        }
+      });
+
+      const tbody = document.querySelector('#tabla tbody');
+      tbody.innerHTML='';
+      for(const ing of ingredientesList){
+        const total = totales[ing] || 0;
+        const tr = document.createElement('tr');
+        const tdName = document.createElement('td'); tdName.textContent = ing;
+        const tdTotal = document.createElement('td');
+        if(ing === 'Huevo'){
+          tdTotal.textContent = total + ' uds';
+        } else {
+          tdTotal.textContent = total + ' g';
+        }
+        const tdKilos = document.createElement('td');
+        if(ing === 'Huevo'){
+          tdKilos.textContent = (total>0? total + ' unidades (comprar por docenas)': '0');
+        } else {
+          const kg = (total/1000);
+          tdKilos.textContent = (total>=1000? kg.toFixed(3) + ' kg' : (total>0? (total)+' g' : '0'));
+        }
+        tr.appendChild(tdName); tr.appendChild(tdTotal); tr.appendChild(tdKilos);
+        tbody.appendChild(tr);
+      }
+    }
+
+    document.getElementById('calc').addEventListener('click', calcular);
+    document.getElementById('reset').addEventListener('click', ()=>{ inputs.forEach(i=>i.value=0); calcular(); });
+
+    document.getElementById('download').addEventListener('click', ()=>{
+      const cantidades = inputs.map(i=>Math.max(0,Math.floor(Number(i.value)||0)));
+      const headers = ['Ingrediente','Cantidad_total','Equivalente'];
+      const rows = [];
+      const totales = {};
+      ingredientesList.forEach(ing=>totales[ing]=0);
+      recetas.forEach((rec, idx)=>{
+        const n = cantidades[idx];
+        for(const [ing,cant] of Object.entries(rec)){
+          if(totales[ing]===undefined) totales[ing]=0;
+          totales[ing] += cant * n;
+        }
+      });
+      for(const ing of ingredientesList){
+        const total = totales[ing] || 0;
+        if(ing==='Huevo'){
+          rows.push([ing, total + ' uds', total + ' unidades']);
+        } else {
+          const eq = (total>=1000? (total/1000).toFixed(3) + ' kg' : total + ' g');
+          rows.push([ing, total + ' g', eq]);
+        }
+      }
+      let csv = headers.join(',')+"\n" + rows.map(r=>r.map(c=> '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'ingredientes_ensaladas.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
