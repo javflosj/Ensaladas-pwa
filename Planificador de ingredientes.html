@@ -24,6 +24,15 @@
     @media (max-width:520px){.grid{grid-template-columns:1fr 100px}}
   </style>
 </head>
+  <link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0ea5a4" />
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW error:', err));
+    });
+  }
+</script>
 <body>
   <div class="container">
     <header>
@@ -142,4 +151,5 @@
     });
   </script>
 </body>
+
 </html>
