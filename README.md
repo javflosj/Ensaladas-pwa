@@ -1,2 +1,2 @@
 # Ensaladas-pwa
-calculador e ingredientes de ensaladas
+Calculador de ingredientes de ensaladas
